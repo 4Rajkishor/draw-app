@@ -12,7 +12,8 @@
   "description": "",
   "devDependencies": {
     "@repo/common": "workspace:*",
-    "@repo/typescript-config": "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "@repo/db":"workspace:*"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
