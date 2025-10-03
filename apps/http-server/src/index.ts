@@ -1,7 +1,10 @@
 import express from "express";
 import {SignUpSchema,SigninSchema,CreateRoomSchema} from "@repo/common/Schema";
 import {prismaClient} from "@repo/db/dbSchema";
+import jwt from "jsonwebtoken"
+import {JWT_SECRET} from "@repo/jwt/jwt"
 import bcrypt from "bcrypt"
+import { authMiddleare } from "./authMiddlaware";
 const app=express();
 app.use(express());
 
@@ -45,25 +48,62 @@ app.post("/api/signin",async(req,res)=>{
         })
         return
     }
-    const existingPartner=await prismaClient.user.findFirst({
+    const exisgingUser=await prismaClient.user.findFirst({
         where:{
             email:parshedData.data?.email
         }
     });
-    if (!existingPartner || existingPartner.password){
+    if (!exisgingUser || exisgingUser.password){
         res.status(401).json({
             messge:"user does not exist"
         });
         return
     }
-   const comparePassword=await bcrypt.compare(parshedData.data?.password,existingPartner?.password)
+   const comparePassword=await bcrypt.compare(parshedData.data?.password,exisgingUser?.password);
+   if (!comparePassword){
+    return res.status(401).json({
+        message:"incorrct password"
+    })
+   }
+   const token=jwt.sign({
+    id:exisgingUser.id
+   },JWT_SECRET)
 });
 
-app.post("/api/createRoom",async(req,res)=>{
+app.post("/api/createRoom",authMiddleare,async(req,res)=>{
+    const parshedData=CreateRoomSchema.safeParse(req.body);
+    const userId=req.id;
+    if (!parshedData.success){
+        return res.status(401).json({
+            message:"invalid slug format, please try again"
+        });
 
+    }
+     await prismaClient.room.create({
+        data:{
+            adminid:userId,
+            slug:parshedData.data.slug
+        }
+     });
+
+     res.status(200).json({
+        messge:`${parshedData.data.slug} room has been created `
+     })
+   
 });
 
-app.get("/api/getChat",async(req,res)=>{
+app.get("/api/getChat/:roomId",authMiddleare,async(req,res)=>{
+    const roomId=Number(req.params.roomid)
+  const userId=req.id;
+ const message= await prismaClient.shapes.findMany({
+    where:{
+        roomid:roomId
+    },
+    orderBy:{
+        id:"desc"
+    },
+    take:5
+  })
 
 });
 
