@@ -67,8 +67,15 @@ app.post("/api/signin",async(req,res)=>{
    }
    const token=jwt.sign({
     id:exisgingUser.id
-   },JWT_SECRET)
+   },JWT_SECRET);
+   
+res.status(200).json({
+    message:"you have been signed in successfully",
+    token:token
 });
+
+});
+
 
 app.post("/api/createRoom",authMiddleare,async(req,res)=>{
     const parshedData=CreateRoomSchema.safeParse(req.body);
