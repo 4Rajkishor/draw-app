@@ -1,13 +1,14 @@
 import { WebSocketServer,WebSocket } from "ws";
-import * as  jwt from "jsonwebtoken"
-import {JWT_SECRET} from "@repo/jwt/index"
+import { shapeQueue } from "./queue/shapeQueue"
+import  jwt from "jsonwebtoken"
+import {JWT_SECRET} from "@repo/jwt/jwt"
 const wss= new WebSocketServer({port:8080});
 interface User{
     ws:WebSocket,
-    rooms:[]
+    rooms:string[]
     userId:string
 }
-const Users:User[]=[]
+export const Users:User[]=[]
 
 const checkUser=(token:string | null)=>{
    if (!token){
@@ -39,9 +40,64 @@ const checkUser=(token:string | null)=>{
         ws,
         rooms:[]
 
-    })
+    });
 
-   ws.on("message",(data)=>{
-    ws.send(`you have sent ${data}`);
+   ws.on("message",async (data)=>{
+    const str=typeof data=="string"? data:data.toString();
+    let parsedData:any
+    try{
+         parsedData=JSON.parse(str);
+         console.log("your parshed data is",parsedData)
+         
+    }
+   
+   catch(err){
+    console.error("invalid json format",str,err);
+    ws.send(JSON.stringify({
+      type:"error",
+      message:"invalid message format, please try again",
+      err:Error
+    }));
+    return
+   }
+ 
+   if (parsedData.type==="join_room"){
+     const user=Users.find(x=>x.ws===ws);
+      user?.rooms.push(parsedData.roomid)
+    }
+
+if (parsedData.type==="leave_room"){
+    const user=Users.find(x=>x.ws===ws);
+    if (!user){
+        return
+    }
+    const removeuser=user.rooms.filter(x=>x!==parsedData.roomid);
+    user.rooms=removeuser;
+ }
+ if (parsedData.type==="chat_Room"){
+    const senders=Users.find(x=>x.ws===ws);
+    const {shape,roomid}=parsedData;
+     if (!senders){
+        ws.send(JSON.stringify({
+            type:"error",
+            message:`you have not joined to ${roomid}`
+        }))
+        return
+     } 
+   await shapeQueue.add("shapeUpdates",{
+    roomid,
+    shape,
+    sender:senders.userId
    })
+     Users.forEach(user=>{
+        if (user.rooms.includes(roomid)){
+            user.ws.send(JSON.stringify({
+                type:"chat",
+                roomid:roomid,
+                shape:shape
+            }))
+        }
+     })
+ }
+   });
  });

@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/queue/shapeQueue.ts","./src/worker/shapeWorker.ts"],"version":"5.8.3"}
