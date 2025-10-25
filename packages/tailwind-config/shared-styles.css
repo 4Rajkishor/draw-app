@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@repo/tailwind-config/shared-styles.css";
+
 
 @theme {
   --color-blue-1000: #2a8af6;
