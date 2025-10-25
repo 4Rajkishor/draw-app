@@ -23,4 +23,20 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+
+    @layer base {
+  button,
+  input,
+  textarea,
+  select {
+    @apply bg-transparent border-0 outline-none p-0 m-0;
+    font: inherit;
+    color: inherit;
+  }
+
+  a {
+    @apply no-underline text-inherit;
+  }
+}
+
 }
