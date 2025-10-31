@@ -1,7 +1,8 @@
 import { WebSocketServer,WebSocket } from "ws";
-import { shapeQueue } from "./queue/shapeQueue"
+// import { shapeQueue } from "./queue/shapeQueue"
 import  jwt from "jsonwebtoken"
 import {JWT_SECRET} from "@repo/jwt/jwt"
+import { prismaClient } from "@repo/db/dbSchema";
 const wss= new WebSocketServer({port:8080});
 interface User{
     ws:WebSocket,
@@ -63,7 +64,7 @@ const checkUser=(token:string | null)=>{
  
    if (parsedData.type==="join_room"){
      const user=Users.find(x=>x.ws===ws);
-      user?.rooms.push(parsedData.roomid)
+      user?.rooms.push(parsedData.roomId)
     }
 
 if (parsedData.type==="leave_room"){
@@ -71,33 +72,48 @@ if (parsedData.type==="leave_room"){
     if (!user){
         return
     }
-    const removeuser=user.rooms.filter(x=>x!==parsedData.roomid);
+    const removeuser=user.rooms.filter(x=>x!==parsedData.roomId);
     user.rooms=removeuser;
  }
- if (parsedData.type==="chat_Room"){
+ if (parsedData.type==="chat"){
     const senders=Users.find(x=>x.ws===ws);
-    const {shape,roomid}=parsedData;
+    const {shape,ShapeType}=parsedData;
+    const roomId=Number(parsedData.roomId);
      if (!senders){
         ws.send(JSON.stringify({
             type:"error",
-            message:`you have not joined to ${roomid}`
+            message:`you have not joined to ${roomId}`
         }))
         return
      } 
-   await shapeQueue.add("shapeUpdates",{
-    roomid,
-    shape,
-    sender:senders.userId
-   })
+  //  await shapeQueue.add("shapeUpdates",{
+  //   roomId,
+  //   shape,
+  //   sender:senders.userId
+  //  })
+// add to the db.
+
+
+
      Users.forEach(user=>{
-        if (user.rooms.includes(roomid)){
+        if (user.rooms.includes(roomId.toString())){
             user.ws.send(JSON.stringify({
                 type:"chat",
-                roomid:roomid,
+                ShapeType:ShapeType,
+                roomId:roomId,
                 shape:shape
             }))
         }
      })
+
+     await prismaClient.shapes.create({
+      data:{
+        ShapeType:ShapeType,
+        roomid:roomId,
+        data:shape,
+        userId
+      }
+    })
  }
    });
  });

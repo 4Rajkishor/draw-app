@@ -5,8 +5,10 @@ import jwt from "jsonwebtoken"
 import {JWT_SECRET} from "@repo/jwt/jwt"
 import bcrypt from "bcrypt"
 import { authMiddleare } from "./authMiddlaware";
+import cors from "cors"
 const app=express();
 app.use(express.json());
+app.use(cors())
 
 app.post("/api/signup",async(req,res)=>{
     try{
@@ -132,10 +134,10 @@ app.post("/api/createRoom",authMiddleare,async(req,res)=>{
     
 });
 
-app.get("/api/getChat/:roomId",authMiddleare,async(req,res)=>{
-    const roomId=Number(req.params.roomid)
+app.get("/api/getChat/:roomId",async(req,res)=>{
+    const roomId=Number(req.params.roomId)
   const userId=req.userId;
- const message= await prismaClient.shapes.findMany({
+ const shapes= await prismaClient.shapes.findMany({
     where:{
         roomid:roomId
     },
@@ -143,6 +145,10 @@ app.get("/api/getChat/:roomId",authMiddleare,async(req,res)=>{
         id:"desc"
     },
     take:5
+  })
+
+  res.status(200).json({
+    shapes:shapes
   })
 
 });

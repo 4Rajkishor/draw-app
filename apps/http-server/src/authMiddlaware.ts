@@ -20,10 +20,8 @@ export const authMiddleare=(req:Request,res:Response,next:NextFunction)=>{
   next();
   
     }
-    catch(e){
-        res.status(404).json({
-          message:"token is missing"
-        })
-    }
-}
-
+    catch (error: any) {
+    console.error("JWT verification failed:", error.message);
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};

@@ -5,12 +5,12 @@ const connection={host:"127.0.0.1",port: 6379};
 
 export const shapeWorker= new Worker("shapeUpdates",
    async (job)=>{
-    const {type,roomid,shape,senderId}=job.data;
+    const {ShapeType,roomid,shape,senderId}=job.data;
     await prismaClient.$connect();
     console.log("db is connected");
     await prismaClient.shapes.create({
       data:{
-        type:type,
+        ShapeType:ShapeType,
         roomid:roomid,
         data:shape,
         userId:senderId,
