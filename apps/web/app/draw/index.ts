@@ -1,7 +1,9 @@
 import axios from "axios";
-import { json } from "stream/consumers";
+import { ReactNode } from "react";
+
+
 type Shape={
-    ShapeType:"react",
+    ShapeType:"rect",
     x:number,
     y:number,
     width:number,
@@ -9,9 +11,15 @@ type Shape={
 } |
 {
     ShapeType:"circle",
-    x:number,
-    y:number,
+    centerX:number,
+    centerY:number,
     radius:number
+} |
+
+{
+  ShapeType:"pencil",
+  x:Number,
+  y:Number,
 }
 
 
@@ -25,7 +33,7 @@ export default async function InitDarw(canvas:HTMLCanvasElement,socket:WebSocket
         existingShapes=await getExistingShapes(roomId) || [];
       }
       catch(e:any){
-        console.log("effeting fetching messages",e.message)
+        console.log("error fetching messages",e.message)
       }
 
        ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -44,7 +52,7 @@ export default async function InitDarw(canvas:HTMLCanvasElement,socket:WebSocket
           ...parsedData
        })
        }
-       ClearCanvas(existingShapes,ctx)
+      //  ClearCanvas(existingShapes,ctx)
      }
     
     
@@ -56,18 +64,48 @@ export default async function InitDarw(canvas:HTMLCanvasElement,socket:WebSocket
     canvas?.addEventListener("mouseup",(e)=>{
 
       clicked=false;
-      const width=e.offsetX-startX;
-      const height=e.offsetY-startY;
+      const width=Math.abs(e.offsetX-startX);
+      const height=Math.abs(e.offsetY-startY);
+      const radius=Math.max(width,height)/2;
+      const centerX=(radius+startX);
+      const centerY=(radius+startY);
 
-      const drawnShapes:Shape={
-         ShapeType:"react",
+    //@ts-ignore
+      const selectedTool=window.selectedTool;
+      let drawnShapes:Shape | null =null;
+      if (selectedTool==="rect"){
+          drawnShapes={
+         ShapeType:"rect",
         x:startX,
         y:startY,
         height,
-        width
+        width,
+        
+      } 
       }
+      else if (selectedTool==="circle"){
+        
+        drawnShapes={
+         ShapeType:"circle",
+        centerX,
+       centerY,
+       radius
+        
+      } 
+
+      }
+
+      if (!drawnShapes){
+        return
+      }
+
+       
      
          existingShapes.push(drawnShapes)
+
+         if (selectedTool==="rect"){
+
+         }
       
       socket.send(JSON.stringify({
         type:"chat",
@@ -75,10 +113,13 @@ export default async function InitDarw(canvas:HTMLCanvasElement,socket:WebSocket
            x:startX,
         y:startY,
         height,
-        width
+        width,
+        centerX,
+        centerY,
+        radius
         }),
         roomId,
-        ShapeType:JSON.stringify(drawnShapes.ShapeType)
+        ShapeType:(drawnShapes.ShapeType)
     
 
       }))
@@ -89,24 +130,66 @@ export default async function InitDarw(canvas:HTMLCanvasElement,socket:WebSocket
       clicked=true;
       startX=e.offsetX;
       startY=e.offsetY
-
-
+     
+    
+    
     });
 
     
 
     canvas?.addEventListener("mousemove",(e)=>{
        if (clicked){
-        const width=e.offsetX-startX;
-        const height=e.offsetY-startY;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const width=Math.abs(e.offsetX-startX);
+        const height=Math.abs(e.offsetY-startY) ;
+        const radius=Math.max(width,height)/2;
+      const centerX=startX+radius;
+      const centerY=startY+radius;
+  //@ts-ignore
+      const selectedTool=window.selectedTool;
 
+      if (selectedTool==="rect"){
+         ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeRect(startX,startY,width,height)
+        
+      } else if (selectedTool==="circle"){
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.closePath();   
+
+        // console.log(`Radius is ${radius}, centerX is ${centerX},centerY is ${centerY}`);
+      }
+
+          else if (selectedTool==="pencil"){
+             
+
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+           
+            ctx.beginPath()
+            ctx.moveTo(startX,startX);
+            ctx.lineTo(startX,startX);
+            ctx.stroke();
+                    ctx.strokeStyle="orange";
+          }
+    
+        
        ClearCanvas(existingShapes,ctx);
        
          ctx.strokeStyle="orange";
-         ctx.strokeRect(startX,startY,width,height)
+        
+
+      // new code above this.
+
+      //   ctx.clearRect(0, 0, canvas.width, canvas.height);
+      //   ctx.beginPath();
+      //   ctx.arc(centerX,centerY,radius,0,2*Math.PI);
+      //  ClearCanvas(existingShapes,ctx);
+       
+      //    ctx.strokeStyle="orange";
+      //    ctx.strokeRect(startX,startY,width,height)
       
-     
+      
          
        }
 
@@ -116,20 +199,27 @@ export default async function InitDarw(canvas:HTMLCanvasElement,socket:WebSocket
 function ClearCanvas(existingShapes:Shape[],ctx:CanvasRenderingContext2D){
    
     //    existingShapes.map((shape)=>{
-    //     if (shape.type=="react"){
+    //     if (shape.type=="rect"){
     //     ctx.strokeRect(shape.x,shape.y,shape.width,shape.height);
     //     }
     //    });
             console.log("your existing shapae data",existingShapes);
     existingShapes.forEach((shape)=>{
-        if (shape.ShapeType=="react"){
+        if (shape.ShapeType=="rect"){
             ctx.strokeRect(shape.x,shape.y,shape.width,shape.height);
+        }
+
+        else if (shape.ShapeType==="circle"){
+          ctx.beginPath();
+          ctx.arc(shape.centerX,shape.centerY,shape.radius,0,2*Math.PI);
+          ctx.stroke();
+          ctx.closePath();
         }
        
     })}
 
 
-    export async function getExistingShapes(roomId:string){
+export async function getExistingShapes(roomId:string){
 
       try{
        const token=localStorage.getItem("token");
@@ -144,7 +234,7 @@ function ClearCanvas(existingShapes:Shape[],ctx:CanvasRenderingContext2D){
            const shapeData =JSON.parse(x.data);
            console.log("Shapes data",shapeData);
            return {
-             ShapeType:JSON.parse(x.ShapeType),
+             ShapeType:(x.ShapeType),
              ...shapeData
            }
          })
@@ -153,6 +243,6 @@ function ClearCanvas(existingShapes:Shape[],ctx:CanvasRenderingContext2D){
          return shapes
       }
       catch(e){
-      console.log("error fetching shapes");
-      }
+      console.log("error while fetching data from db",e);
+         }
     }
