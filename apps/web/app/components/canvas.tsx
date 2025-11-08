@@ -20,7 +20,7 @@ export default function Canvas({
   const [selectedTool, setselectedTool] = useState<Tool>("rect")
   const [game,setgame]=useState<Game>()
   const [cordinates,setcordinates]=useState([]);
-
+  
   useEffect(() => {
     game?.setTool(selectedTool)
   }, [selectedTool,game])
@@ -32,8 +32,12 @@ export default function Canvas({
     }
 
      const g=new Game(canvas,socket,roomId)
-
+    
    setgame(g);
+
+   return()=>{
+    g.destroy();
+   }
 
   }, [canvasRef]);
 
@@ -59,7 +63,7 @@ const TopBar = (
       <div className="bg-blue-500 text-white p-4">Tailwind test</div>
       <div className="flex justify-top">
         <IconButton selected={selectedTool === "circle"} onClick={() => { setselectedTool("circle"); alert("circle selected") }}><Circle /></IconButton>
-        <IconButton selected={selectedTool === "rect"} onClick={() => { setselectedTool("rect") }}><RectangleHorizontalIcon /></IconButton>
+        <IconButton selected={selectedTool === "rect"} onClick={() => { setselectedTool("rect");alert("rect is selected") }}><RectangleHorizontalIcon /></IconButton>
         <IconButton selected={selectedTool === "pencil"} onClick={() => { setselectedTool("pencil");alert("pencil selected") }}><Pencil /></IconButton>
       </div>
 

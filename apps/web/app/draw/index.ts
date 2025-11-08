@@ -198,11 +198,7 @@ export default async function InitDarw(canvas:HTMLCanvasElement,socket:WebSocket
 
 function ClearCanvas(existingShapes:Shape[],ctx:CanvasRenderingContext2D){
    
-    //    existingShapes.map((shape)=>{
-    //     if (shape.type=="rect"){
-    //     ctx.strokeRect(shape.x,shape.y,shape.width,shape.height);
-    //     }
-    //    });
+    
             console.log("your existing shapae data",existingShapes);
     existingShapes.forEach((shape)=>{
         if (shape.ShapeType=="rect"){

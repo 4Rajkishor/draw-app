@@ -13,10 +13,9 @@ export async function getExistingShapes(roomId:string){
          const shapes=recivedfromDb.map((x :{ShapeType:string,data:string})=>{
            const shapeData =JSON.parse(x.data);
            console.log("Shapes data",shapeData);
-           return {
-             ShapeType:x.ShapeType,
-             ...shapeData
-           }
+           return shapeData
+           
+           
          })
           
          console.log("here is shape",shapes)
